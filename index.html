@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Static Public Webpages</title>
+<meta name="description" content="A collection of simple static webpages by David Grundy.">
+<style>
+  :root {
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --text: #1d1d1b;
+    --muted: #6b6b66;
+    --border: #e4e4df;
+    --accent: #1f5f8b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161615;
+      --surface: #1f1f1d;
+      --text: #ecece8;
+      --muted: #9a9a94;
+      --border: #33332f;
+      --accent: #7db7e0;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 680px; margin: 0 auto; padding: 56px 16px 72px; }
+  h1 { font-size: 1.75rem; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 36px; }
+  ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+  li { border-bottom: 1px solid var(--border); }
+  li a {
+    display: flex; justify-content: space-between; gap: 16px;
+    padding: 14px 4px; color: var(--text); text-decoration: none;
+  }
+  li a:hover .name, li a:focus-visible .name { color: var(--accent); text-decoration: underline; }
+  .path { color: var(--muted); font-size: 0.85rem; font-family: ui-monospace, Consolas, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .status { color: var(--muted); padding: 14px 4px; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 0.85rem; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Static Public Webpages</h1>
+  <p class="sub">Simple standalone pages by David Grundy.</p>
+  <ul id="pages"><li class="status">Loading pages…</li></ul>
+  <footer>
+    This list updates itself from the
+    <a href="https://github.com/davidgrundyuk/static-public-webpages">GitHub repository</a>.
+  </footer>
+</main>
+<script>
+  // Lists every .html page in the repo, so new pages appear here without editing this file.
+  // A page saved as folder/index.html is linked as folder/.
+  const REPO = "davidgrundyuk/static-public-webpages";
+  const list = document.getElementById("pages");
+
+  function prettify(path) {
+    const last = path.replace(/\/$/, "").split("/").pop().replace(/\.html?$/i, "");
+    return last.replace(/[-_]+/g, " ").replace(/^\w/, c => c.toUpperCase());
+  }
+
+  function showStatus(text) {
+    list.innerHTML = "";
+    const li = document.createElement("li");
+    li.className = "status";
+    li.textContent = text;
+    list.appendChild(li);
+  }
+
+  fetch(`https://api.github.com/repos/${REPO}/git/trees/main?recursive=1`)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(data => {
+      const pages = data.tree
+        .filter(item => item.type === "blob" && /\.html?$/i.test(item.path))
+        .filter(item => item.path !== "index.html")
+        .filter(item => !item.path.split("/").some(part => part.startsWith(".") || part.startsWith("_")))
+        .map(item => item.path.replace(/(^|\/)index\.html?$/i, "$1"))
+        .sort((a, b) => a.localeCompare(b));
+
+      if (!pages.length) { showStatus("No pages yet."); return; }
+
+      list.innerHTML = "";
+      for (const path of pages) {
+        const a = document.createElement("a");
+        a.href = path.split("/").map(encodeURIComponent).join("/");
+        const name = document.createElement("span");
+        name.className = "name";
+        name.textContent = prettify(path);
+        const p = document.createElement("span");
+        p.className = "path";
+        p.textContent = path;
+        a.append(name, p);
+        const li = document.createElement("li");
+        li.appendChild(a);
+        list.appendChild(li);
+      }
+    })
+    .catch(() => showStatus("Couldn't load the list of pages just now. Try again in a few minutes."));
+</script>
+</body>
+</html>
