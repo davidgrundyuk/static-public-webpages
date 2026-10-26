@@ -65,7 +65,7 @@
 
   function prettify(path) {
     const last = path.replace(/\/$/, "").split("/").pop().replace(/\.html?$/i, "");
-    return last.replace(/[-_]+/g, " ").replace(/^\w/, c => c.toUpperCase());
+    return last.replace(/[-_]+/g, " ").replace(/\bai\b/gi, "AI").replace(/^\w/, c => c.toUpperCase());
   }
 
   function showStatus(text) {
